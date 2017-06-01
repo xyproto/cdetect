@@ -1,3 +1,5 @@
+<a href="https://github.com/xyproto/elfinfo"><img src="https://raw.githubusercontent.com/xyproto/elfinfo/master/web/elfinfo.png" style="margin-left: 2em"></a>
+
 # ELFinfo
 
 Tiny program for emitting only the most basic information about an ELF file.
