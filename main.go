@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const versionString = "ELFinfo 0.2"
+const versionString = "ELFinfo 0.3"
 
 // stripped returns true if symbols can not be retrieved from the given ELF file
 func stripped(f *elf.File) bool {
