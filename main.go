@@ -196,9 +196,8 @@ func main() {
 		if os.Args[1] == "--version" {
 			fmt.Println(versionString)
 			return
-		} else {
-			examine(os.Args[1])
 		}
+		examine(os.Args[1])
 	} else {
 		fmt.Println("Needs a filename as the first argument")
 		os.Exit(1)
