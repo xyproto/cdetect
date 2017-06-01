@@ -112,7 +112,7 @@ func machine2string(m elf.Machine) string {
 func examine(filename string) {
 	f, err := elf.Open(filename)
 	if err != nil {
-		fmt.Printf("%s: not an ELF: %s", filename, err.Error())
+		fmt.Printf("%s: not an ELF: %s\n", filename, err.Error())
 
 		os.Exit(1)
 	}
