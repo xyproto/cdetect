@@ -5,14 +5,85 @@ import (
 	"debug/elf"
 	"fmt"
 	"os"
+	"regexp"
+	"strings"
 )
 
-const versionString = "ELFinfo 0.1"
+const versionString = "ELFinfo 0.2"
 
 // stripped returns true if symbols can not be retrieved from the given ELF file
 func stripped(f *elf.File) bool {
 	_, err := f.Symbols()
 	return err != nil
+}
+
+// returns the GCC compiler version or an empty string
+// example output: "GCC 6.3.1"
+func gccver(f *elf.File) string {
+	sec := f.Section(".comment")
+	if sec == nil {
+		return ""
+	}
+	b, errData := sec.Data()
+	if errData != nil {
+		return ""
+	}
+	cVersion := string(b)
+	if strings.HasPrefix(cVersion, "GCC: (GNU) ") && strings.Count(cVersion, " ") == 3 {
+		fields := strings.Split(cVersion[11:], " ")
+		return "GCC " + fields[0]
+	}
+	return cVersion
+}
+
+// returns the Go compiler version or an empty string
+// example output: "Go 1.8.3"
+func gover(f *elf.File) string {
+	sec := f.Section(".rodata")
+	if sec == nil {
+		return ""
+	}
+	b, errData := sec.Data()
+	if errData != nil {
+		return ""
+	}
+	versionCatcher := regexp.MustCompile(`go(\d+\.)?(\d+\.)?(\*|\d+)`)
+	goVersion := string(versionCatcher.Find(b))
+	if strings.HasPrefix(goVersion, "go") {
+		return "Go " + goVersion[2:]
+	}
+	return goVersion
+}
+
+// returns the FPC compiler version or an empty string
+// example output: "FPC 3.0.2"
+func pasver(f *elf.File) string {
+	sec := f.Section(".data")
+	if sec == nil {
+		return ""
+	}
+	b, errData := sec.Data()
+	if errData != nil {
+		return ""
+	}
+	versionCatcher := regexp.MustCompile(`FPC\ (\d+\.)?(\d+\.)?(\*|\d+)`)
+	return string(versionCatcher.Find(b))
+
+}
+
+// returns the version of the Go or GCC compiler that was used for compiling the ELF,
+// or an empty string
+func compiler(f *elf.File) string {
+	if goVersion := gover(f); goVersion != "" {
+		return goVersion
+	}
+	if gccVersion := gccver(f); gccVersion != "" {
+		return gccVersion
+	}
+	if pasVersion := pasver(f); pasVersion != "" {
+		return pasVersion
+	}
+	return "unknown"
 }
 
 func machine2string(m elf.Machine) string {
@@ -116,7 +187,7 @@ func examine(filename string) {
 
 		os.Exit(1)
 	}
-	fmt.Printf("%s: stripped=%v, byteorder=%v, machine=%v\n", filename, stripped(f), f.ByteOrder, machine2string(f.Machine))
+	fmt.Printf("%s: stripped=%v, compiler=%v, byteorder=%v, machine=%v\n", filename, stripped(f), compiler(f), f.ByteOrder, machine2string(f.Machine))
 	f.Close()
 }
 
