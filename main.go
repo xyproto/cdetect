@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-const version_string = "ELFinfo 0.1"
+const versionString = "ELFinfo 0.1"
 
 // stripped returns true if symbols can not be retrieved from the given ELF file
 func stripped(f *elf.File) bool {
@@ -112,7 +112,8 @@ func machine2string(m elf.Machine) string {
 func examine(filename string) {
 	f, err := elf.Open(filename)
 	if err != nil {
-		fmt.Printf("%s: not an ELF: %s", err.Error())
+		fmt.Printf("%s: not an ELF: %s", filename, err.Error())
+
 		os.Exit(1)
 	}
 	fmt.Printf("%s: stripped=%v, byteorder=%v, machine=%v\n", filename, stripped(f), f.ByteOrder, machine2string(f.Machine))
@@ -121,7 +122,12 @@ func examine(filename string) {
 
 func main() {
 	if len(os.Args) > 1 {
-		examine(os.Args[1])
+		if os.Args[1] == "--version" {
+			fmt.Println(versionString)
+			return
+		} else {
+			examine(os.Args[1])
+		}
 	} else {
 		fmt.Println("Needs a filename as the first argument")
 		os.Exit(1)
