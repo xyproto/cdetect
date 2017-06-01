@@ -88,7 +88,7 @@ The details will be different for other platforms.<br />
     </p>
     <pre>
         cd /tmp
-        curl -O https://github.com/xyproto/elfinfo/releases/download/0.2/elfinfo
+        curl -LO https://github.com/xyproto/elfinfo/releases/download/0.2/elfinfo
         sudo install -Dm755 elfinfo /usr/bin/elfinfo
     </pre>
     <br />
@@ -101,7 +101,7 @@ The details will be different for other platforms.<br />
     </p>
     <pre>
         cd /tmp
-        curl -O https://raw.githubusercontent.com/xyproto/elfinfo/0.2/main.go
+        curl -LO https://raw.githubusercontent.com/xyproto/elfinfo/0.2/main.go
         sudo install -Dm755 main.go /usr/bin/elfinfo.go
         echo -e '#!/bin/sh\n/usr/bin/go run /usr/bin/elfinfo.go "$@"' > elfinfo.sh
         sudo install -Dm755 elfinfo.sh /usr/bin/elfinfo
