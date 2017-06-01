@@ -47,7 +47,7 @@ func gover(f *elf.File) string {
 	if errData != nil {
 		return ""
 	}
-	versionCatcher := regexp.MustCompile(`go(\d+\.)?(\d+\.)?(\*|\d+)`)
+	versionCatcher := regexp.MustCompile(`go(\d+\.)(\d+\.)?(\*|\d+)`)
 	goVersion := string(versionCatcher.Find(b))
 	if strings.HasPrefix(goVersion, "go") {
 		return "Go " + goVersion[2:]
