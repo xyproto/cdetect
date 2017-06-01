@@ -71,7 +71,7 @@ func pasver(f *elf.File) string {
 
 }
 
-// returns the version of the Go or GCC compiler that was used for compiling the ELF,
+// returns the compiler name and version that was used for compiling the ELF,
 // or an empty string
 func compiler(f *elf.File) string {
 	if goVersion := gover(f); goVersion != "" {
