@@ -29,9 +29,12 @@ func gccver(f *elf.File) string {
 		return ""
 	}
 	cVersion := string(b)
-	if strings.HasPrefix(cVersion, "GCC: (GNU) ") && strings.Count(cVersion, " ") == 3 {
-		fields := strings.Split(cVersion[11:], " ")
-		return "GCC " + fields[0]
+	if strings.Contains(cVersion, "GCC: (GNU) ") {
+		versionCatcher := regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)`)
+		gccVersion := string(versionCatcher.Find(b))
+		if gccVersion != "" {
+			return "GCC " + gccVersion
+		}
 	}
 	return cVersion
 }
