@@ -12,8 +12,7 @@ Installation:
 
 Example usage:
 
-    elfinfo /usr/bin/ls
-
-Example output:
-
+    $ elfinfo /usr/bin/ls
     /usr/bin/ls: stripped=true, compiler=GCC 6.3.1, byteorder=LittleEndian, machine=Advanced Micro Devices x86-64
+
+* Version: 0.4

@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const versionString = "ELFinfo 0.3"
+const versionString = "ELFinfo 0.4"
 
 // stripped returns true if symbols can not be retrieved from the given ELF file
 func stripped(f *elf.File) bool {
@@ -29,12 +29,18 @@ func gccver(f *elf.File) string {
 		return ""
 	}
 	cVersion := string(b)
-	if strings.Contains(cVersion, "GCC: (GNU) ") {
-		versionCatcher := regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)`)
-		gccVersion := string(versionCatcher.Find(b))
+	if strings.Contains(cVersion, "GCC: (") {
+		versionCatcher1 := regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)\ `)
+		gccVersion := strings.TrimSpace(string(versionCatcher1.Find(b)))
 		if gccVersion != "" {
 			return "GCC " + gccVersion
 		}
+		versionCatcher2 := regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)`)
+		gccVersion = strings.TrimSpace(string(versionCatcher2.Find(b)))
+		if gccVersion != "" {
+			return "GCC " + gccVersion
+		}
+		return "GCC " + cVersion[5:]
 	}
 	return cVersion
 }
@@ -54,6 +60,13 @@ func gover(f *elf.File) string {
 	goVersion := string(versionCatcher.Find(b))
 	if strings.HasPrefix(goVersion, "go") {
 		return "Go " + goVersion[2:]
+	}
+	if goVersion == "" {
+		gosec := f.Section(".gosymtab")
+		if gosec != nil {
+			return "Go (unknown version)"
+		}
+		return ""
 	}
 	return goVersion
 }
