@@ -26,7 +26,7 @@ elfinfo is a small utility for showing information about ELF files<br />
 </div>
 <div style="margin-left: 200px;"><br />
   It can show information about which machine an ELF file has been compiled for, if it's stripped or not, if it's big or little endian and which compiler and version has been used to compile the file.<br />
-It can detect compiler version for files compiled with the Go, GCC or FPC compilers.<br />
+It can detect compiler version for files compiled with the Go, GCC, OCaml or FPC compilers.<br />
 <br />
 </div>
 <div style="margin-left: 120px; color: white; background-color: white;"><span style="font-family: Helvetica,Arial,sans-serif; color: black;"><span style="font-weight: bold;">Example</span></span><span style="font-family: Helvetica,Arial,sans-serif; font-weight: bold;"></span>
@@ -49,7 +49,7 @@ The details will be different for other platforms.<br />
 <li>It only shows the most basic of information about ELF files.</li>
 <li>It can show which compiler was used for compiling a binary, even after it has been stripped.</li>
 <li>It aims to solve a tiny problem properly instead of a thousand problems halfway, in true UNIX-spirit.</li>
-<li>The methods for retrieving the compiler version for exectuables are different for Go, GCC and FPC. <span style="font-family: Courier New,Courier,monospace;">elfinfo</span> handles all three.</li>
+<li>The methods for retrieving the compiler version for exectuables are different for Go, GCC, OCaml and FPC. <span style="font-family: Courier New,Courier,monospace;">elfinfo</span> handles all three.</li>
 <li>Discovering the GCC version number from an executable may involve using the <span style="font-family: Courier New,Courier,monospace;">string</span> command and look for the first string that pops up and looks like a version number. <span style="font-family: Courier New,Courier,monospace;">elfinfo</span> only looks at specific sections in the ELF file.</li>
 </ul>
 <br />
