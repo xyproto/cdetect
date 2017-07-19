@@ -2,6 +2,7 @@
 package main
 
 import (
+	"bytes"
 	"debug/elf"
 	"fmt"
 	"os"
@@ -9,7 +10,7 @@ import (
 	"strings"
 )
 
-const versionString = "ELFinfo 0.4"
+const versionString = "ELFinfo 0.5"
 
 // stripped returns true if symbols can not be retrieved from the given ELF file
 func stripped(f *elf.File) bool {
@@ -87,16 +88,39 @@ func pasver(f *elf.File) string {
 
 }
 
+// returns the OCaml compiler version or an empty string
+// example output: "OCaml 4.05.0"
+func ocamlver(f *elf.File) string {
+	sec := f.Section(".rodata")
+	if sec == nil {
+		return ""
+	}
+	b, errData := sec.Data()
+	if errData != nil {
+		return ""
+	}
+	if !bytes.Contains(b, []byte("[ocaml]")) {
+		// Probably not OCaml
+		return ""
+	}
+	versionCatcher := regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)`)
+	ocamlVersion := "OCaml " + string(versionCatcher.Find(b))
+	if ocamlVersion == "" {
+		return "OCaml (unknown version)"
+	}
+	return ocamlVersion
+}
+
 // returns the compiler name and version that was used for compiling the ELF,
 // or an empty string
 func compiler(f *elf.File) string {
 	if goVersion := gover(f); goVersion != "" {
 		return goVersion
-	}
-	if gccVersion := gccver(f); gccVersion != "" {
+	} else if ocamlVersion := ocamlver(f); ocamlVersion != "" {
+		return ocamlVersion
+	} else if gccVersion := gccver(f); gccVersion != "" {
 		return gccVersion
-	}
-	if pasVersion := pasver(f); pasVersion != "" {
+	} else if pasVersion := pasver(f); pasVersion != "" {
 		return pasVersion
 	}
 	return "unknown"
@@ -196,26 +220,52 @@ func machine2string(m elf.Machine) string {
 	return "Unknown machine"
 }
 
-func examine(filename string) {
+func examine(filename string, onlyCompilerInfo bool) {
 	f, err := elf.Open(filename)
 	if err != nil {
-		fmt.Printf("%s: not an ELF: %s\n", filename, err.Error())
+		fmt.Printf("%s: %s\n", filename, err.Error())
 
 		os.Exit(1)
 	}
-	fmt.Printf("%s: stripped=%v, compiler=%v, byteorder=%v, machine=%v\n", filename, stripped(f), compiler(f), f.ByteOrder, machine2string(f.Machine))
-	f.Close()
+	defer f.Close()
+
+	if onlyCompilerInfo {
+		fmt.Printf("%v\n", compiler(f))
+	} else {
+		fmt.Printf("%s: stripped=%v, compiler=%v, byteorder=%v, machine=%v\n", filename, stripped(f), compiler(f), f.ByteOrder, machine2string(f.Machine))
+	}
+}
+
+func usage() {
+	fmt.Println()
+	fmt.Println(versionString)
+	fmt.Println()
+	fmt.Println("Usage:")
+	fmt.Println("    elfinfo [OPTION]... [FILE]")
+	fmt.Println()
+	fmt.Println("Options:")
+	fmt.Println("    -c, --compiler          - only detect compiler name and version")
+	fmt.Println("    -v, --version           - version info")
+	fmt.Println("    -h, --help              - this help output")
+	fmt.Println()
 }
 
 func main() {
-	if len(os.Args) > 1 {
-		if os.Args[1] == "--version" {
+	if len(os.Args) == 2 {
+		if os.Args[1] == "-h" || os.Args[1] == "--help" {
+			usage()
+		} else if os.Args[1] == "-v" || os.Args[1] == "--version" {
 			fmt.Println(versionString)
-			return
+		} else {
+			examine(os.Args[1], false)
 		}
-		examine(os.Args[1])
+	} else if len(os.Args) == 3 {
+		if os.Args[1] == "-c" || os.Args[1] == "--compiler" {
+			examine(os.Args[2], true)
+		} else {
+			usage()
+		}
 	} else {
-		fmt.Println("Needs a filename as the first argument")
-		os.Exit(1)
+		usage()
 	}
 }
