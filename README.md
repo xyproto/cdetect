@@ -1,21 +1,20 @@
-<a href="https://github.com/xyproto/elfinfo"><img src="https://raw.githubusercontent.com/xyproto/elfinfo/master/web/elfinfo.png" style="margin-left: 2em" width="200px"></a>
+# CompiledWith
 
-# ELFinfo
+Utility for figuring out which compiler and compiler version was sued for compiling an executable file for Linux (in the ELF format).
 
-Tiny program for emitting only the most basic information about an ELF file.
-
-Can detect the compiler used to compile even a stripped binary for Go, GCC and FPC.
+* Can detect which compiler was used for Go, GCC, FPC and OCaml.
+* Works even with stripped executables.
 
 Installation (development version):
 
-    go get github.com/xyproto/elfinfo
+    go get github.com/xyproto/compiledwith
 
 Example usage:
 
-    $ elfinfo -c /bin/sh
+    $ compiledwith /bin/sh
     GCC 6.1.1
 
-    $ elfinfo /usr/bin/ls
-    /usr/bin/ls: stripped=true, compiler=GCC 6.3.1, byteorder=LittleEndian, machine=Advanced Micro Devices x86-64
+    $ compiledwith /usr/bin/ls
+    GCC 6.3.1
 
-* Version: 0.5
+* Version: 0.1
