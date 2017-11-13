@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-const versionString = "compiledwith 0.1"
+const versionString = "cdetect 0.2"
 
 // returns the GCC compiler version or an empty string
 // example output: "GCC 6.3.1"
@@ -139,7 +139,7 @@ func usage() {
 	fmt.Println(versionString)
 	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Println("    compiledwith [OPTION]... [FILE]")
+	fmt.Println("    cdetect [OPTION]... [FILE]")
 	fmt.Println()
 	fmt.Println("Options:")
 	fmt.Println("    -v, --version           - version info")

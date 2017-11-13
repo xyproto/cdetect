@@ -1,20 +1,22 @@
-# CompiledWith
+# CDetect
 
 Utility for figuring out which compiler and compiler version was sued for compiling an executable file for Linux (in the ELF format).
 
 * Can detect which compiler was used for Go, GCC, FPC and OCaml.
 * Works even with stripped executables.
 
-Installation (development version):
+### Installation (development version):
 
-    go get github.com/xyproto/compiledwith
+    go get github.com/xyproto/cdetect
 
-Example usage:
+### Example usage
 
-    $ compiledwith /bin/sh
+    $ cdetect /bin/sh
     GCC 6.1.1
 
-    $ compiledwith /usr/bin/ls
+    $ cdetect /usr/bin/ls
     GCC 6.3.1
 
-* Version: 0.1
+### General info
+
+* Version: 0.2
