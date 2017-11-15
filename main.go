@@ -135,8 +135,9 @@ func examine(filename string) {
 }
 
 func usage() {
-	fmt.Println()
 	fmt.Println(versionString)
+	fmt.Println()
+	fmt.Println("Detect the compiler version, given an executable (ELF)")
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Println("    cdetect [OPTION]... [FILE]")
@@ -144,7 +145,6 @@ func usage() {
 	fmt.Println("Options:")
 	fmt.Println("    -v, --version           - version info")
 	fmt.Println("    -h, --help              - this help output")
-	fmt.Println()
 }
 
 func main() {
