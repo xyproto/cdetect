@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-const versionString = "cdetect 0.3"
+const versionString = "cdetect 0.4"
 
 var (
 	gccMarker   = []byte("GCC: (")
