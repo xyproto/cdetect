@@ -12,10 +12,15 @@ import (
 
 const versionString = "cdetect 0.3"
 
+var (
+	gccMarker   = []byte("GCC: (")
+	clangMarker = []byte("clang version")
+)
+
 // returns the GCC compiler version or an empty string
 // example output: "GCC 6.3.1"
+// Also handles clang.
 func gccver(f *elf.File) string {
-	gccMarker := []byte("GCC: (")
 	sec := f.Section(".comment")
 	if sec == nil {
 		return ""
@@ -24,18 +29,26 @@ func gccver(f *elf.File) string {
 	if errData != nil {
 		return ""
 	}
-	// If the bytes are on this form: "GCC: (GNU) 6.3.0GCC: (GNU) 7.2.0"
-	// Then use the last one.
-	if bytes.Count(versionData, gccMarker) > 1 {
-		// Remove all but the last "GCC: (" version string
-		versionData = versionData[bytes.LastIndex(versionData, gccMarker):]
-	}
 	if bytes.Contains(versionData, gccMarker) {
+		// Check if this is really clang
+		if bytes.Contains(versionData, clangMarker) {
+			clangVersionCatcher := regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)\ `)
+			clangVersion := bytes.TrimSpace(clangVersionCatcher.Find(versionData))
+			return "Clang " + string(clangVersion)
+		}
+		// If the bytes are on this form: "GCC: (GNU) 6.3.0GCC: (GNU) 7.2.0"
+		// Then use the last one.
+		if bytes.Count(versionData, gccMarker) > 1 {
+			// Remove all but the last "GCC: (" version string
+			versionData = versionData[bytes.LastIndex(versionData, gccMarker):]
+		}
+		// Try the first regexp for picking out the version
 		versionCatcher1 := regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)\ `)
 		gccVersion := bytes.TrimSpace(versionCatcher1.Find(versionData))
 		if len(gccVersion) > 0 {
 			return "GCC " + string(gccVersion)
 		}
+		// Try the second regexp for picking out the version
 		versionCatcher2 := regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)`)
 		gccVersion = bytes.TrimSpace(versionCatcher2.Find(versionData))
 		if len(gccVersion) > 0 {
@@ -88,6 +101,21 @@ func pasver(f *elf.File) string {
 
 }
 
+// TCC has no version number, but it has some signature sections
+// Returns "TCC" or an empty string
+func tccver(f *elf.File) string {
+	// .note.ABI-tag must be missing
+	if f.Section(".note.ABI-tag") != nil {
+		// TCC does not normally have this section, not TCC
+		return ""
+	}
+	if f.Section(".rodata.cst4") == nil {
+		// TCC usually has this section, not TCC
+		return ""
+	}
+	return "TCC"
+}
+
 // returns the OCaml compiler version or an empty string
 // example output: "OCaml 4.05.0"
 func ocamlver(f *elf.File) string {
@@ -122,6 +150,8 @@ func compiler(f *elf.File) string {
 		return gccVersion
 	} else if pasVersion := pasver(f); pasVersion != "" {
 		return pasVersion
+	} else if tccVersion := tccver(f); tccVersion != "" {
+		return tccVersion
 	}
 	return "unknown"
 }

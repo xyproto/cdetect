@@ -2,8 +2,15 @@
 
 Utility for figuring out which compiler and compiler version was used for compiling an executable file for Linux (in the ELF format).
 
-* Can detect which compiler was used for Go, GCC, FPC and OCaml.
+* Supports detection of compiler name and version if an executable was built with one of these compilers:
+  * GCC
+  * Clang
+  * FPC
+  * OCaml
+  * Go
+  * TCC (compiler name only, executable does not include a version number)
 * Works even with stripped executables.
+* Should work for recent versions of the above compilers, but more testing is needed for supporting old versions.
 
 ### Installation (development version):
 
