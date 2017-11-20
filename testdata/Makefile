@@ -1,12 +1,20 @@
-.PHONY: clean
+.PHONY:all clean nox 
 
-SRC = main.cpp
-EXE = clang_hello
+CC = tcc
 CXX = clang++
 CXXFLAGS ?= -O2
 
-${EXE}: ${SRC}
+all: clang_hello tcc_hello nox
+
+clang_hello: clang_hello.cpp
 	${CXX} ${CXXFLAGS} $< -o $@
 
+tcc_hello: tcc_hello.c
+	${CC} ${CXXFLAGS} $< -o $@
+
+nox:
+	chmod -x clang_hello
+	chmod -x tcc_hello
+
 clean:
-	rm -f ${EXE}
+	rm -f clang_hello tcc_hello
