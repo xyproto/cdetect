@@ -10,34 +10,40 @@ import (
 	"strings"
 )
 
-const versionString = "cdetect 0.2"
+const versionString = "cdetect 0.3"
 
 // returns the GCC compiler version or an empty string
 // example output: "GCC 6.3.1"
 func gccver(f *elf.File) string {
+	gccMarker := []byte("GCC: (")
 	sec := f.Section(".comment")
 	if sec == nil {
 		return ""
 	}
-	b, errData := sec.Data()
+	versionData, errData := sec.Data()
 	if errData != nil {
 		return ""
 	}
-	cVersion := string(b)
-	if strings.Contains(cVersion, "GCC: (") {
+	// If the bytes are on this form: "GCC: (GNU) 6.3.0GCC: (GNU) 7.2.0"
+	// Then use the last one.
+	if bytes.Count(versionData, gccMarker) > 1 {
+		// Remove all but the last "GCC: (" version string
+		versionData = versionData[bytes.LastIndex(versionData, gccMarker):]
+	}
+	if bytes.Contains(versionData, gccMarker) {
 		versionCatcher1 := regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)\ `)
-		gccVersion := strings.TrimSpace(string(versionCatcher1.Find(b)))
-		if gccVersion != "" {
-			return "GCC " + gccVersion
+		gccVersion := bytes.TrimSpace(versionCatcher1.Find(versionData))
+		if len(gccVersion) > 0 {
+			return "GCC " + string(gccVersion)
 		}
 		versionCatcher2 := regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)`)
-		gccVersion = strings.TrimSpace(string(versionCatcher2.Find(b)))
-		if gccVersion != "" {
-			return "GCC " + gccVersion
+		gccVersion = bytes.TrimSpace(versionCatcher2.Find(versionData))
+		if len(gccVersion) > 0 {
+			return "GCC " + string(gccVersion)
 		}
-		return "GCC " + cVersion[5:]
+		return "GCC " + string(gccVersion)[5:]
 	}
-	return cVersion
+	return string(versionData)
 }
 
 // returns the Go compiler version or an empty string
@@ -120,7 +126,7 @@ func compiler(f *elf.File) string {
 	return "unknown"
 }
 
-func examine(filename string) {
+func examine(filename string) string {
 	f, err := elf.Open(filename)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "bad magic") {
@@ -131,7 +137,7 @@ func examine(filename string) {
 		os.Exit(1)
 	}
 	defer f.Close()
-	fmt.Printf("%v\n", compiler(f))
+	return compiler(f)
 }
 
 func usage() {
@@ -145,16 +151,18 @@ func usage() {
 	fmt.Println("Options:")
 	fmt.Println("    -v, --version           - version info")
 	fmt.Println("    -h, --help              - this help output")
+	fmt.Println()
 }
 
 func main() {
 	if len(os.Args) == 2 {
-		if os.Args[1] == "-h" || os.Args[1] == "--help" {
+		switch os.Args[1] {
+		case "-h", "--help":
 			usage()
-		} else if os.Args[1] == "-v" || os.Args[1] == "--version" {
+		case "-v", "--version":
 			fmt.Println(versionString)
-		} else {
-			examine(os.Args[1])
+		default:
+			fmt.Println(examine(os.Args[1]))
 		}
 	} else {
 		usage()
