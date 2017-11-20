@@ -19,4 +19,4 @@ Utility for figuring out which compiler and compiler version was sued for compil
 
 ### General info
 
-* Version: 0.2
+* Version: 0.3
