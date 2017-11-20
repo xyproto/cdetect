@@ -1,6 +1,6 @@
 # CDetect
 
-Utility for figuring out which compiler and compiler version was sued for compiling an executable file for Linux (in the ELF format).
+Utility for figuring out which compiler and compiler version was used for compiling an executable file for Linux (in the ELF format).
 
 * Can detect which compiler was used for Go, GCC, FPC and OCaml.
 * Works even with stripped executables.
