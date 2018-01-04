@@ -1,4 +1,4 @@
-# CDetect
+# :microscope: CDetect
 
 Utility for figuring out which compiler and compiler version was used for compiling an executable file for Linux (in the ELF format).
 
@@ -47,3 +47,4 @@ Utility for figuring out which compiler and compiler version was used for compil
 ### General info
 
 * Version: 0.4
+* License: MIT
