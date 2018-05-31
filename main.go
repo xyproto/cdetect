@@ -1,21 +1,61 @@
 //usr/bin/go run $0 $@ ; exit
 package main
 
+// Only depends on the standard library
 import (
 	"bytes"
 	"debug/elf"
+	"errors"
 	"fmt"
+	"math"
 	"os"
+	"path"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
-const versionString = "cdetect 0.4"
+const versionString = "cdetect 0.5"
 
 var (
 	gccMarker   = []byte("GCC: (")
+	gnuEnding   = []byte("GNU) ")
 	clangMarker = []byte("clang version")
 )
+
+// versionSum takes a slice of strings that are the parts of a version number.
+// The parts are converted to numbers. If they can't be converted, they count
+// as less than nothing. The parts are then summed together, but with more
+// emphasis put on the earlier numbers. 2.0.0.0 has emphasis 2000.
+// The sum is then returned.
+func versionSum(parts []string) int {
+	sum := 0
+	length := len(parts)
+	for i := length - 1; i >= 0; i-- {
+		num, err := strconv.Atoi(parts[i])
+		if err != nil {
+			num = -1
+		}
+		sum += num * int(math.Pow(float64(10), float64(length-i-1)))
+	}
+	return sum
+}
+
+// firstIsGreater checks if the first version number is greater than the second one.
+// It uses a relatively simple algorithm, where all non-numbers counts as less than "0".
+func firstIsGreater(a, b string) bool {
+	a_parts := strings.Split(a, ".")
+	b_parts := strings.Split(b, ".")
+	// Expand the shortest version list with zeroes
+	for len(a_parts) < len(b_parts) {
+		a_parts = append(a_parts, "0")
+	}
+	for len(b_parts) < len(a_parts) {
+		b_parts = append(b_parts, "0")
+	}
+	// The two lists that are being compared should be of the same length
+	return versionSum(a_parts) > versionSum(b_parts)
+}
 
 // returns the GCC compiler version or an empty string
 // example output: "GCC 6.3.1"
@@ -36,11 +76,24 @@ func gccver(f *elf.File) string {
 			clangVersion := bytes.TrimSpace(clangVersionCatcher.Find(versionData))
 			return "Clang " + string(clangVersion)
 		}
-		// If the bytes are on this form: "GCC: (GNU) 6.3.0GCC: (GNU) 7.2.0"
-		// Then use the last one.
+		// If the bytes are on this form: "GCC: (GNU) 6.3.0GCC: (GNU) 7.2.0",
+		// use the largest version number.
 		if bytes.Count(versionData, gccMarker) > 1 {
-			// Remove all but the last "GCC: (" version string
-			versionData = versionData[bytes.LastIndex(versionData, gccMarker):]
+			// Split in to 3 parts, always valid for >=2 instances of gccMarker
+			elements := bytes.SplitN(versionData, gccMarker, 3)
+			version_a := elements[1]
+			version_b := elements[2]
+			if bytes.HasPrefix(version_a, gnuEnding) {
+				version_a = version_a[5:]
+			}
+			if bytes.HasPrefix(version_b, gnuEnding) {
+				version_b = version_b[5:]
+			}
+			if firstIsGreater(string(version_a), string(version_b)) {
+				versionData = version_a
+			} else {
+				versionData = version_b
+			}
 		}
 		// Try the first regexp for picking out the version
 		versionCatcher1 := regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)\ `)
@@ -57,6 +110,30 @@ func gccver(f *elf.File) string {
 		return "GCC " + string(gccVersion)[5:]
 	}
 	return string(versionData)
+}
+
+// returns the Rust compiler version or an empty string
+// example output: "Rust 1.27.0"
+func rustver(f *elf.File) string {
+	sec := f.Section(".rodata")
+	if sec == nil {
+		return ""
+	}
+	b, errData := sec.Data()
+	if errData != nil {
+		return ""
+	}
+	foundIndex := bytes.Index(b, []byte("__rust_"))
+	if foundIndex <= 0 || b[foundIndex-1] != 0 {
+		return ""
+	}
+	// Rust may use GCC for linking
+	gccVersion := gccver(f)
+	if gccVersion != "" {
+		return "Rust (" + gccver(f) + ")"
+	} else {
+		return "Rust"
+	}
 }
 
 // returns the Go compiler version or an empty string
@@ -139,13 +216,16 @@ func ocamlver(f *elf.File) string {
 	return ocamlVersion
 }
 
-// returns the compiler name and version that was used for compiling the ELF,
-// or an empty string
+// compiler takes an *elf.File and tries to find which compiler and version
+// it was compiled with, by probing for known locations, strings and patterns.
 func compiler(f *elf.File) string {
+	// The ordering matters
 	if goVersion := gover(f); goVersion != "" {
 		return goVersion
 	} else if ocamlVersion := ocamlver(f); ocamlVersion != "" {
 		return ocamlVersion
+	} else if rustVersion := rustver(f); rustVersion != "" {
+		return rustVersion
 	} else if gccVersion := gccver(f); gccVersion != "" {
 		return gccVersion
 	} else if pasVersion := pasver(f); pasVersion != "" {
@@ -156,18 +236,45 @@ func compiler(f *elf.File) string {
 	return "unknown"
 }
 
-func examine(filename string) string {
+// examine tries to discover which compiler and compiler version the given
+// file was compiled with.
+func examine(filename string) (string, error) {
 	f, err := elf.Open(filename)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "bad magic") {
-			fmt.Println("Not an ELF")
-		} else {
-			fmt.Println(err)
+			return "", errors.New("Not an ELF")
 		}
-		os.Exit(1)
+		return "", err
 	}
 	defer f.Close()
-	return compiler(f)
+	return compiler(f), nil
+}
+
+// mustExamine does the same as examine, but panics instead of returning an error
+func mustExamine(filename string) string {
+	compilerVersion, err := examine(filename)
+	if err != nil {
+		panic(err)
+	}
+	return compilerVersion
+}
+
+// Check if the given filename exists.
+// If it only exists in $PATH, return the full path.
+// Else return an empty string.
+func which(filename string) (string, error) {
+	_, err := os.Stat(filename)
+	if !os.IsNotExist(err) {
+		return filename, nil
+	}
+	for _, directory := range strings.Split(os.Getenv("PATH"), ":") {
+		fullPath := path.Join(directory, filename)
+		_, err := os.Stat(fullPath)
+		if !os.IsNotExist(err) {
+			return fullPath, nil
+		}
+	}
+	return "", errors.New("No such file or directory: " + filename)
 }
 
 func usage() {
@@ -192,7 +299,17 @@ func main() {
 		case "-v", "--version":
 			fmt.Println(versionString)
 		default:
-			fmt.Println(examine(os.Args[1]))
+			filepath, err := which(os.Args[1])
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+			compilerVersion, err := examine(filepath)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+			fmt.Println(compilerVersion)
 		}
 	} else {
 		usage()
