@@ -30,6 +30,10 @@ func TestRust(t *testing.T) {
 	assert.Equal(t, mustExamine("testdata/rust_hello"), "Rust 1.27.0-nightly")
 }
 
+func TestGCC(t *testing.T) {
+	assert.Equal(t, mustExamine("testdata/afl-analyze"), "GCC 7.2.0")
+}
+
 func TestVersionCompare(t *testing.T) {
 	assert.Equal(t, firstIsGreater("2", "1.0.7.abc"), true)
 	assert.Equal(t, firstIsGreater("2.0", "2.0 alpha1"), true)
