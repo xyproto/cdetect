@@ -35,6 +35,10 @@ Utility for figuring out which compiler and compiler version was used for compil
 
 ### Changelog
 
+#### 0.5 to 0.5.1
+
+* Fix an issue with version detection for Rust.
+
 #### 0.4 to 0.5
 
 * Add support for detecting executables compiled with Rust.
@@ -58,6 +62,6 @@ Utility for figuring out which compiler and compiler version was used for compil
 
 ### General info
 
-* Version: 0.5
+* Version: 0.5.1
 * Author: Alexander F. Rødseth &lt;xyproto@archlinux.org&gt;
 * License: MIT
