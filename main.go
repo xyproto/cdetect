@@ -278,7 +278,7 @@ func examine(filename string) (string, error) {
 	f, err := elf.Open(filename)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "bad magic") {
-			return "", errors.New("Not an ELF")
+			return "", errors.New(filename + ": Not an ELF")
 		}
 		return "", err
 	}
@@ -310,7 +310,7 @@ func which(filename string) (string, error) {
 			return fullPath, nil
 		}
 	}
-	return "", errors.New("No such file or directory: " + filename)
+	return "", errors.New(filename + ": no such file or directory")
 }
 
 func usage() {
