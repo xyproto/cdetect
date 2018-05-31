@@ -22,8 +22,12 @@ func TestTCC(t *testing.T) {
 	assert.Equal(t, mustExamine("testdata/tcc_hello"), "TCC")
 }
 
+func TestRustStripped(t *testing.T) {
+	assert.Equal(t, mustExamine("testdata/rust_hello_stripped"), "Rust (GCC 8.1.0)")
+}
+
 func TestRust(t *testing.T) {
-	assert.Equal(t, mustExamine("testdata/rust_hello"), "Rust (GCC 8.1.0)")
+	assert.Equal(t, mustExamine("testdata/rust_hello"), "Rust 1.27.0-nightly")
 }
 
 func TestVersionCompare(t *testing.T) {

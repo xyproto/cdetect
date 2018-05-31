@@ -112,9 +112,43 @@ func gccver(f *elf.File) string {
 	return string(versionData)
 }
 
-// returns the Rust compiler version or an empty string
+// Returns the Rust compiler version or an empty string
 // example output: "Rust 1.27.0"
-func rustver(f *elf.File) string {
+func rustverUnstripped(f *elf.File) string {
+	// Check if there is debug data in the executable, that may contain the version number
+	sec0 := f.Section(".debug_str")
+	if sec0 == nil {
+		return ""
+	}
+	b0, errData := sec0.Data()
+	if errData != nil {
+		return ""
+	}
+
+	// Check if there is at least one 0 byte in the .debug_str section
+	zeroPos := bytes.Index(b0, []byte{0})
+	if zeroPos == -1 {
+		return ""
+	}
+
+	// Pick out the version number from this data, if available
+	versionInfo := b0[:zeroPos]
+	if bytes.Contains(versionInfo, []byte("rustc version ")) {
+		elems := bytes.Split(versionInfo, []byte("rustc version "))
+		versionInfo = elems[1]
+		if bytes.Contains(versionInfo, []byte("(")) {
+			elems = bytes.Split(versionInfo, []byte("("))
+			versionInfo = elems[0]
+		}
+	}
+	return "Rust " + string(bytes.TrimSpace(versionInfo))
+}
+
+// Returns the Rust compiler version or an empty string,
+// from a stripped Rust executable. Does not contain the Rust
+// version number.
+// Example output: "Rust (GCC 8.1.0)"
+func rustverStripped(f *elf.File) string {
 	sec := f.Section(".rodata")
 	if sec == nil {
 		return ""
@@ -224,7 +258,9 @@ func compiler(f *elf.File) string {
 		return goVersion
 	} else if ocamlVersion := ocamlver(f); ocamlVersion != "" {
 		return ocamlVersion
-	} else if rustVersion := rustver(f); rustVersion != "" {
+	} else if rustVersion := rustverUnstripped(f); rustVersion != "" {
+		return rustVersion
+	} else if rustVersion := rustverStripped(f); rustVersion != "" {
 		return rustVersion
 	} else if gccVersion := gccver(f); gccVersion != "" {
 		return gccVersion
@@ -260,8 +296,8 @@ func mustExamine(filename string) string {
 }
 
 // Check if the given filename exists.
-// If it only exists in $PATH, return the full path.
-// Else return an empty string.
+// If it exists in $PATH, return the full path,
+// else return an empty string.
 func which(filename string) (string, error) {
 	_, err := os.Stat(filename)
 	if !os.IsNotExist(err) {
