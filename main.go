@@ -21,6 +21,7 @@ var (
 	gccMarker   = []byte("GCC: (")
 	gnuEnding   = []byte("GNU) ")
 	clangMarker = []byte("clang version")
+	rustMarker = []byte("rustc version")
 )
 
 // versionSum takes a slice of strings that are the parts of a version number.
@@ -116,32 +117,28 @@ func gccver(f *elf.File) string {
 // example output: "Rust 1.27.0"
 func rustverUnstripped(f *elf.File) string {
 	// Check if there is debug data in the executable, that may contain the version number
-	sec0 := f.Section(".debug_str")
-	if sec0 == nil {
+	sec := f.Section(".debug_str")
+	if sec == nil {
 		return ""
 	}
-	b0, errData := sec0.Data()
+	b, errData := sec.Data()
 	if errData != nil {
 		return ""
 	}
 
-	// Check if there is at least one 0 byte in the .debug_str section
-	zeroPos := bytes.Index(b0, []byte{0})
-	if zeroPos == -1 {
+	pos1 := bytes.Index(b, rustMarker)
+	if pos1 == -1 {
 		return ""
 	}
-
-	// Pick out the version number from this data, if available
-	versionInfo := b0[:zeroPos]
-	if bytes.Contains(versionInfo, []byte("rustc version ")) {
-		elems := bytes.Split(versionInfo, []byte("rustc version "))
-		versionInfo = elems[1]
-		if bytes.Contains(versionInfo, []byte("(")) {
-			elems = bytes.Split(versionInfo, []byte("("))
-			versionInfo = elems[0]
-		}
+	pos1 += len(rustMarker) + 1
+	pos2 := bytes.Index(b[pos1:], []byte("("))
+	if pos2 == -1 {
+		return ""
 	}
-	return "Rust " + string(bytes.TrimSpace(versionInfo))
+	pos2 += pos1
+	versionString := strings.TrimSpace(string(b[pos1:pos2]))
+
+	return "Rust " + versionString
 }
 
 // Returns the Rust compiler version or an empty string,
