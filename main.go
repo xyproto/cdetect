@@ -21,7 +21,7 @@ var (
 	gccMarker   = []byte("GCC: (")
 	gnuEnding   = []byte("GNU) ")
 	clangMarker = []byte("clang version")
-	rustMarker = []byte("rustc version")
+	rustMarker  = []byte("rustc version")
 )
 
 // versionSum takes a slice of strings that are the parts of a version number.
@@ -45,17 +45,17 @@ func versionSum(parts []string) int {
 // firstIsGreater checks if the first version number is greater than the second one.
 // It uses a relatively simple algorithm, where all non-numbers counts as less than "0".
 func firstIsGreater(a, b string) bool {
-	a_parts := strings.Split(a, ".")
-	b_parts := strings.Split(b, ".")
+	aParts := strings.Split(a, ".")
+	bParts := strings.Split(b, ".")
 	// Expand the shortest version list with zeroes
-	for len(a_parts) < len(b_parts) {
-		a_parts = append(a_parts, "0")
+	for len(aParts) < len(bParts) {
+		aParts = append(aParts, "0")
 	}
-	for len(b_parts) < len(a_parts) {
-		b_parts = append(b_parts, "0")
+	for len(bParts) < len(aParts) {
+		bParts = append(bParts, "0")
 	}
 	// The two lists that are being compared should be of the same length
-	return versionSum(a_parts) > versionSum(b_parts)
+	return versionSum(aParts) > versionSum(bParts)
 }
 
 // returns the GCC compiler version or an empty string
@@ -82,18 +82,18 @@ func gccver(f *elf.File) string {
 		if bytes.Count(versionData, gccMarker) > 1 {
 			// Split in to 3 parts, always valid for >=2 instances of gccMarker
 			elements := bytes.SplitN(versionData, gccMarker, 3)
-			version_a := elements[1]
-			version_b := elements[2]
-			if bytes.HasPrefix(version_a, gnuEnding) {
-				version_a = version_a[5:]
+			versionA := elements[1]
+			versionB := elements[2]
+			if bytes.HasPrefix(versionA, gnuEnding) {
+				versionA = versionA[5:]
 			}
-			if bytes.HasPrefix(version_b, gnuEnding) {
-				version_b = version_b[5:]
+			if bytes.HasPrefix(versionB, gnuEnding) {
+				versionB = versionB[5:]
 			}
-			if firstIsGreater(string(version_a), string(version_b)) {
-				versionData = version_a
+			if firstIsGreater(string(versionA), string(versionB)) {
+				versionData = versionA
 			} else {
-				versionData = version_b
+				versionData = versionB
 			}
 		}
 		// Try the first regexp for picking out the version
@@ -159,12 +159,10 @@ func rustverStripped(f *elf.File) string {
 		return ""
 	}
 	// Rust may use GCC for linking
-	gccVersion := gccver(f)
-	if gccVersion != "" {
+	if gccVersion := gccver(f); gccVersion != "" {
 		return "Rust (" + gccver(f) + ")"
-	} else {
-		return "Rust"
 	}
+	return "Rust"
 }
 
 // returns the Go compiler version or an empty string

@@ -1,4 +1,3 @@
-// Test
 package main
 
 import (
