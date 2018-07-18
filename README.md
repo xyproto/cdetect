@@ -28,10 +28,10 @@ Utility for figuring out which compiler and compiler version was used for compil
   * FPC
   * OCaml
   * Go
-  * TCC (compiler name only, executable does not include a version number)
+  * TCC (compiler name only, TCC does not store the version number in the executables)
   * Rust (for stripped executables, only the compiler name and GCC version used for linking)
 * Works even with stripped executables.
-* Should work for recent versions of the above compilers, but more testing is needed for supporting all old versions.
+* Should work for recent versions of all of the above compilers. Executables produced with old versions of the compilers may need more testing.
 
 ### Changelog
 
