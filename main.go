@@ -97,13 +97,13 @@ func gccver(f *elf.File) string {
 			}
 		}
 		// Try the first regexp for picking out the version
-		versionCatcher1 := regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)\ `)
+		versionCatcher1 := regexp.MustCompile(`(\d{1,4}\.)(\d+\.)?(\*|\d+)\ `)
 		gccVersion := bytes.TrimSpace(versionCatcher1.Find(versionData))
 		if len(gccVersion) > 0 {
 			return "GCC " + string(gccVersion)
 		}
 		// Try the second regexp for picking out the version
-		versionCatcher2 := regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)`)
+		versionCatcher2 := regexp.MustCompile(` (\d{1,4}\.)(\d+\.)?(\*|\d+)`)
 		gccVersion = bytes.TrimSpace(versionCatcher2.Find(versionData))
 		if len(gccVersion) > 0 {
 			return "GCC " + string(gccVersion)
