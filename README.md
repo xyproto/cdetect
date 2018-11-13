@@ -4,21 +4,21 @@ Utility for figuring out which compiler and compiler version was used for compil
 
 ### Installation (development version):
 
-    go get github.com/xyproto/cdetect
+    go get -u github.com/xyproto/cdetect/cmd/cdetect
 
 ### Example usage
 
     $ cdetect /bin/sh
-    GCC 7.3.0
+    GCC 8.1.1
 
     $ cdetect /usr/bin/ls
-    GCC 7.2.1
+    GCC 8.2.0
 
     $ cdetect testdata/rust_hello
     Rust 1.27.0-nightly
 
     $ cdetect go
-    Go 1.10.2
+    Go 1.11.2
 
 ### Features and limitations
 
@@ -34,6 +34,11 @@ Utility for figuring out which compiler and compiler version was used for compil
 * Should work for recent versions of all of the above compilers. Executables produced with old versions of the compilers may need more testing.
 
 ### Changelog
+
+#### 0.5.1 to 0.5.2
+
+* Refactor out code to the [ainur](https://github.com/xyproto/ainur) module.
+* Better support for 32-bit PowerPC ELF files.
 
 #### 0.5 to 0.5.1
 
