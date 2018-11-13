@@ -67,6 +67,6 @@ Utility for figuring out which compiler and compiler version was used for compil
 
 ### General info
 
-* Version: 0.5.1
+* Version: 0.5.2
 * Author: Alexander F. Rødseth &lt;xyproto@archlinux.org&gt;
 * License: MIT
