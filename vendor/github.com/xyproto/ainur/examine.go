@@ -274,6 +274,12 @@ func Compiler(f *elf.File) string {
 	return "unknown"
 }
 
+// Stripped returns true if symbols can not be retrieved from the given ELF file
+func Stripped(f *elf.File) bool {
+	_, err := f.Symbols()
+	return err != nil
+}
+
 // Examine tries to discover which compiler and compiler version the given
 // file was compiled with.
 func Examine(filename string) (string, error) {
