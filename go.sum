@@ -5,5 +5,5 @@ github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORN
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
-github.com/xyproto/ainur v1.0.2 h1:IM61mVB5LR4EcZzAy6mEXKwIDtC7U5eO+eosN2BZXJg=
-github.com/xyproto/ainur v1.0.2/go.mod h1:18DyWBt78jZNQUW6DB2k7PsS3z3x0YGdmJ6qBK9og2A=
+github.com/xyproto/ainur v1.0.3 h1:JRUCQjEQqmsmRAX7PloGPDIa6DyTERDtyT/q/cuuBDo=
+github.com/xyproto/ainur v1.0.3/go.mod h1:18DyWBt78jZNQUW6DB2k7PsS3z3x0YGdmJ6qBK9og2A=

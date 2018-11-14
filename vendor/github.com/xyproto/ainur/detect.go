@@ -153,6 +153,11 @@ func RustVerUnstripped(f *elf.File) string {
 // version number.
 // Example output: "Rust (GCC 8.1.0)"
 func RustVerStripped(f *elf.File) string {
+	// Check if the .gcc_except_table ELF section exists
+	if f.Section(".gcc_except_table") == nil {
+		return ""
+	}
+	// Check if the .rodata ELF section exists
 	sec := f.Section(".rodata")
 	if sec == nil {
 		return ""
@@ -161,15 +166,39 @@ func RustVerStripped(f *elf.File) string {
 	if errData != nil {
 		return ""
 	}
-	foundIndex := bytes.Index(b, []byte("__rust_"))
-	if foundIndex <= 0 || b[foundIndex-1] != 0 {
-		return ""
+	// Look for the rust marker that may appear in new, stripped executables
+	if bytes.Index(b, []byte("/rustc-")) == -1 {
+		// Look for the rust marker that may appear in old, stripped executables
+		rustIndex1 := bytes.Index(b, []byte("__rust_"))
+		if rustIndex1 <= 0 || b[rustIndex1-1] != 0 {
+			// No rust markers! Probably not created with the Rust compiler.
+			return ""
+		}
 	}
 	// Rust may use GCC for linking
 	if gccVersion := GCCVer(f); gccVersion != "" {
 		return "Rust (" + GCCVer(f) + ")"
 	}
 	return "Rust"
+}
+
+// DVer returns "DMD" if it is detected
+// Example output: "DMD"
+func DVer(f *elf.File) string {
+	// Check if the .dynstr ELF section exists
+	sec := f.Section(".dynstr")
+	if sec == nil {
+		return ""
+	}
+	b, errData := sec.Data()
+	if errData != nil {
+		return ""
+	}
+	// Look for the DMD marker
+	if bytes.Index(b, []byte("__dmd_")) != -1 {
+		return "DMD"
+	}
+	return ""
 }
 
 // GoVer returns the Go compiler version or an empty string
@@ -264,6 +293,8 @@ func Compiler(f *elf.File) string {
 		return rustVersion
 	} else if rustVersion := RustVerStripped(f); rustVersion != "" {
 		return rustVersion
+	} else if dVersion := DVer(f); dVersion != "" {
+		return dVersion
 	} else if gccVersion := GCCVer(f); gccVersion != "" {
 		return gccVersion
 	} else if pasVersion := PasVer(f); pasVersion != "" {

@@ -2,6 +2,11 @@
 
 Go module for figuring out which compiler and compiler version was used for compiling an executable file for Linux (in the ELF format).
 
+### Utilities that uses Ainur
+
+* [elfinfo](https://github.com/xyproto/elfinfo) | [webpage](https://elfinfo.roboticoverlords.org)
+* [cdetect](https://github.com/xyproto/cdetect)
+
 ### Features and limitations
 
 * Supports detection of compiler name and version if an executable was built with one of these compilers:
