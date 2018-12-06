@@ -11,7 +11,7 @@ import (
 	"github.com/xyproto/ainur"
 )
 
-const versionString = "cdetect 0.5.2"
+const versionString = "cdetect 0.5.3"
 
 func usage() {
 	fmt.Println(versionString)

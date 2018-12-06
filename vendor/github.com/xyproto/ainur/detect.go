@@ -17,6 +17,7 @@ var (
 	gnuEnding   = []byte("GNU) ")
 	clangMarker = []byte("clang version")
 	rustMarker  = []byte("rustc version")
+	ghcMarker   = []byte("GHC ")
 )
 
 // versionSum takes a slice of strings that are the parts of a version number.
@@ -53,10 +54,33 @@ func FirstIsGreater(a, b string) bool {
 	return versionSum(aParts) > versionSum(bParts)
 }
 
+// GHCVer returns the GHC compiler version or an empty string
+// example output: "GHC 8.6.2"
+func GHCVer(f *elf.File) string {
+	sec := f.Section(".comment")
+	if sec == nil {
+		return ""
+	}
+	versionData, errData := sec.Data()
+	if errData != nil {
+		return ""
+	}
+	if bytes.Contains(versionData, ghcMarker) {
+		// Try the first regexp for picking out the version
+		versionCatcher1 := regexp.MustCompile(`GHC\ (\d{1,4}\.)(\d+\.)?(\d+)`)
+		ghcVersion := bytes.TrimSpace(versionCatcher1.Find(versionData))
+		if len(ghcVersion) > 0 {
+			return "GHC " + string(ghcVersion[4:])
+		}
+	}
+	return ""
+}
+
 // GCCVer returns the GCC compiler version or an empty string
 // example output: "GCC 6.3.1"
 // Also handles clang.
 func GCCVer(f *elf.File) string {
+	debug := false
 	sec := f.Section(".comment")
 	if sec == nil {
 		return ""
@@ -92,26 +116,38 @@ func GCCVer(f *elf.File) string {
 			}
 		}
 		// Try the first regexp for picking out the version
-		versionCatcher1 := regexp.MustCompile(`(\d{1,4}\.)(\d+\.)?(\*|\d+)\ `)
+		versionCatcher1 := regexp.MustCompile(`\) (\d{1,4}\.)(\d+\.)?(\*|\d+)\ `)
 		gccVersion := bytes.TrimSpace(versionCatcher1.Find(versionData))
 		if len(gccVersion) > 0 {
-			return "GCC " + string(gccVersion)
+			if debug {
+				println("GCC #1 " + string(gccVersion[2:]))
+			}
+			return "GCC " + string(gccVersion[2:])
 		}
 		// Try the second regexp for picking out the version
 		versionCatcher2 := regexp.MustCompile(` (\d{1,4}\.)(\d+\.)?(\*|\d+)`)
 		gccVersion = bytes.TrimSpace(versionCatcher2.Find(versionData))
 		if len(gccVersion) > 0 {
+			if debug {
+				println("GCC #2 " + string(gccVersion))
+			}
 			return "GCC " + string(gccVersion)
 		}
 		// Try the third regexp for picking out the version
 		versionCatcher3 := regexp.MustCompile(`(\d{1,4}\.)(\d+\.)?(\*|\d+)`)
 		gccVersion = bytes.TrimSpace(versionCatcher3.Find(versionData))
 		if len(gccVersion) > 0 {
+			if debug {
+				println("GCC #3 " + string(gccVersion))
+			}
 			return "GCC " + string(gccVersion)
 		}
 		// See what we've got
 		gccVersionString := strings.TrimSpace(string(gccVersion))
 		if len(gccVersionString) > 5 {
+			if debug {
+				println("GCC #4 " + string(gccVersion[5:]))
+			}
 			return "GCC " + string(gccVersion)[5:]
 		}
 		// Failed to find a GCC version string
@@ -289,6 +325,8 @@ func Compiler(f *elf.File) string {
 		return goVersion
 	} else if ocamlVersion := OCamlVer(f); ocamlVersion != "" {
 		return ocamlVersion
+	} else if ghcVersion := GHCVer(f); ghcVersion != "" {
+		return ghcVersion
 	} else if rustVersion := RustVerUnstripped(f); rustVersion != "" {
 		return rustVersion
 	} else if rustVersion := RustVerStripped(f); rustVersion != "" {
