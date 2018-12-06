@@ -4,7 +4,7 @@ Utility for figuring out which compiler and compiler version was used for compil
 
 ### Installation (development version):
 
-    go get -u github.com/xyproto/cdetect/cmd/cdetect
+    go get -u github.com/xyproto/cdetect
 
 ### Example usage
 
