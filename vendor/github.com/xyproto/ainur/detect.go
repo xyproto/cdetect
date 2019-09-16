@@ -131,7 +131,10 @@ func GCCVer(f *elf.File) string {
 			if debug {
 				println("GCC #2 " + string(gccVersion))
 			}
-			return "GCC " + string(gccVersion)
+			// Check that it does not start with "1.", that may happen
+			if !bytes.HasPrefix(gccVersion, []byte("1.")) {
+				return "GCC " + string(gccVersion)
+			}
 		}
 		// Try the third regexp for picking out the version
 		versionCatcher3 := regexp.MustCompile(`(\d{1,4}\.)(\d+\.)?(\*|\d+)`)
@@ -140,7 +143,19 @@ func GCCVer(f *elf.File) string {
 			if debug {
 				println("GCC #3 " + string(gccVersion))
 			}
-			return "GCC " + string(gccVersion)
+			// Check that it does not start with "1.", that may happen
+			if !bytes.HasPrefix(gccVersion, []byte("1.")) {
+				return "GCC " + string(gccVersion)
+			}
+		}
+		// Try the fourth regexp for picking out the version
+		versionCatcher4 := regexp.MustCompile(`\) (\d{1,4}\.)(\d+\.)?(\*|\d+).(\d+)`)
+		gccVersion = bytes.TrimSpace(versionCatcher4.Find(versionData))
+		if len(gccVersion) > 0 {
+			if debug {
+				println("GCC #4 " + string(gccVersion))
+			}
+			return "GCC " + string(gccVersion)[2:]
 		}
 		// See what we've got
 		gccVersionString := strings.TrimSpace(string(gccVersion))
@@ -148,7 +163,11 @@ func GCCVer(f *elf.File) string {
 			if debug {
 				println("GCC #4 " + string(gccVersion[5:]))
 			}
-			return "GCC " + string(gccVersion)[5:]
+			// Check that the version number is not "0"
+			retver := string(gccVersion)[5:]
+			if retver != "0" {
+				return "GCC " + retver
+			}
 		}
 		// Failed to find a GCC version string
 		return ""

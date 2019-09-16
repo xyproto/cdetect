@@ -1,2 +1,2 @@
-# github.com/xyproto/ainur v1.1.0
+# github.com/xyproto/ainur v1.1.1
 github.com/xyproto/ainur

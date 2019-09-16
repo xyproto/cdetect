@@ -1,3 +1,5 @@
 module github.com/xyproto/cdetect
 
-require github.com/xyproto/ainur v1.1.0
+go 1.12
+
+require github.com/xyproto/ainur v1.1.1
