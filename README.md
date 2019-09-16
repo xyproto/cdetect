@@ -36,6 +36,10 @@ Utility for figuring out which compiler and compiler version was used for compil
 
 ### Changelog
 
+#### 0.5.3 to 0.5.4
+
+* Add support for executables built with GCC 8 for 32-bit PowerPC.
+
 #### 0.5.2 to 0.5.3
 
 * Add detection of compiler name and version from executables built with `ghc` (Haskell).
@@ -72,6 +76,6 @@ Utility for figuring out which compiler and compiler version was used for compil
 
 ### General info
 
-* Version: 0.5.2
+* Version: 0.5.4
 * Author: Alexander F. Rødseth &lt;xyproto@archlinux.org&gt;
 * License: MIT
