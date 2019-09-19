@@ -2,7 +2,9 @@
 
 Utility for figuring out which compiler and compiler version was used for compiling an executable file for Linux (in the ELF format).
 
-### Installation (development version):
+### Installation
+
+This requires Go 1.12 or later and will install the development version of `cdetect`:
 
     go get -u github.com/xyproto/cdetect
 
