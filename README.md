@@ -36,6 +36,10 @@ This requires Go 1.12 or later and will install the development version of `cdet
 * Works even with stripped executables.
 * Should work for recent versions of all of the above compilers. Executables produced with old versions of the compilers may need more testing.
 
+### Distro Packages
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/cdetect.svg)](https://repology.org/project/cdetect/versions)
+
 ### Changelog
 
 #### 0.5.3 to 0.5.4
