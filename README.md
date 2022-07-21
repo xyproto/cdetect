@@ -84,4 +84,4 @@ This requires Go 1.12 or later and will install the development version of `cdet
 
 * Version: 0.5.4
 * Author: Alexander F. Rødseth &lt;xyproto@archlinux.org&gt;
-* License: MIT
+* License: BSD-3
