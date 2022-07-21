@@ -11,34 +11,31 @@ import (
 	"github.com/xyproto/ainur"
 )
 
-const versionString = "cdetect 0.5.4"
+const versionString = "cdetect 0.6.0"
 
 func usage() {
-	fmt.Println(versionString)
-	fmt.Println()
-	fmt.Println("Detect the compiler version, given an executable (ELF)")
-	fmt.Println()
-	fmt.Println("Usage:")
-	fmt.Println("    cdetect [OPTION]... [FILE]")
-	fmt.Println()
-	fmt.Println("Options:")
-	fmt.Println("    -v, --version           - version info")
-	fmt.Println("    -h, --help              - this help output")
-	fmt.Println()
+	fmt.Println(versionString + `
+Detect the compiler version, given an executable (ELF)
+
+Usage:
+    cdetect [OPTION]... [FILE]
+
+Options:
+    -v, --version           - version info
+    -h, --help              - this help output
+	`)
 }
 
 // Check if the given filename exists.
 // If it exists in $PATH, return the full path,
 // else return an empty string.
 func which(filename string) (string, error) {
-	_, err := os.Stat(filename)
-	if !os.IsNotExist(err) {
+	if _, err := os.Stat(filename); !os.IsNotExist(err) {
 		return filename, nil
 	}
 	for _, directory := range strings.Split(os.Getenv("PATH"), ":") {
 		fullPath := path.Join(directory, filename)
-		_, err := os.Stat(fullPath)
-		if !os.IsNotExist(err) {
+		if _, err := os.Stat(fullPath); !os.IsNotExist(err) {
 			return fullPath, nil
 		}
 	}
