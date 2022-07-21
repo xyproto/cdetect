@@ -1,6 +1,6 @@
 module github.com/xyproto/ainur
 
-go 1.12
+go 1.11
 
 require (
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869

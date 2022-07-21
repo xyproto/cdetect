@@ -8,6 +8,8 @@ import (
 func Describe(m elf.Machine) string {
 	// https://golang.org/pkg/debug/elf/
 	switch m {
+	case elf.EM_NONE:
+		return "Unknown machine"
 	case elf.EM_M32:
 		return "AT&T WE32100"
 	case elf.EM_SPARC:
@@ -367,16 +369,17 @@ func Describe(m elf.Machine) string {
 	case elf.EM_LANAI:
 		return "Lanai 32-bit processor"
 	case elf.EM_BPF:
-		return "Linux BPF %G–%@ in-kernel virtual machine"
+		return "Linux BPF - in-kernel virtual machine"
 	case elf.EM_486:
 		return "Intel i486"
 	case elf.EM_ALPHA_STD:
 		return "Digital Alpha (standard value)"
 	case elf.EM_ALPHA:
 		return "Alpha (written in the absence of an ABI)"
-	case elf.EM_NONE:
-		fallthrough
 	default:
+		if description := m.String(); description != "" {
+			return description
+		}
 		return "Unknown machine"
 	}
 }
