@@ -4,9 +4,9 @@ Utility for figuring out which compiler and compiler version was used for compil
 
 ### Installation
 
-This requires Go 1.12 or later and will install the development version of `cdetect`:
+With Go 1.17 or later:
 
-    go get -u github.com/xyproto/cdetect
+    go install github.com/xyproto/cdetect@latest
 
 ### Example usage
 
@@ -41,6 +41,11 @@ This requires Go 1.12 or later and will install the development version of `cdet
 [![Packaging status](https://repology.org/badge/vertical-allrepos/cdetect.svg)](https://repology.org/project/cdetect/versions)
 
 ### Changelog
+
+#### 0.5.4 to 0.6.0
+
+* Update dependencies
+* Change the license from MIT to BSD-3
 
 #### 0.5.3 to 0.5.4
 
@@ -82,6 +87,6 @@ This requires Go 1.12 or later and will install the development version of `cdet
 
 ### General info
 
-* Version: 0.5.4
+* Version: 0.6.0
 * Author: Alexander F. Rødseth &lt;xyproto@archlinux.org&gt;
 * License: BSD-3
