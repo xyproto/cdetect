@@ -1,5 +1,3 @@
-# Please use [elfinfo](https://github.com/xyproto/elfinfo) instead. The functionality is so similar to cdetect that I am archiving this repository. Thanks! Sorry for the bother, Void Linux package maintainer. ❤️
-
 #### :microscope: CDetect
 
 Utility for figuring out which compiler and compiler version was used for compiling an executable file for Linux (in the ELF format).
