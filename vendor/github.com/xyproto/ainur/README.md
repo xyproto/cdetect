@@ -7,7 +7,6 @@ Go package for figuring out which compiler and compiler version was used for com
 ### Utilities that uses Ainur
 
 * [elfinfo](https://github.com/xyproto/elfinfo) ([webpage](https://elfinfo.roboticoverlords.org))
-* [cdetect](https://github.com/xyproto/cdetect)
 
 ### Features and limitations
 
@@ -25,6 +24,6 @@ Go package for figuring out which compiler and compiler version was used for com
 
 ### General info
 
-* Version: 1.3.0
+* Version: 1.3.3
 * Author: Alexander F. Rødseth &lt;xyproto@archlinux.org&gt;
 * License: BSD-3

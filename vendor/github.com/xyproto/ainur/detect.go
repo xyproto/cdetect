@@ -6,9 +6,8 @@ import (
 	"bytes"
 	"debug/elf"
 	"errors"
-	"math"
+	"io"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -22,54 +21,47 @@ const (
 )
 
 var (
-	// compilerVersionFunctions is a slice of functions that can be used
-	// for discovering a version string from an ELF file, ordered from
-	// the more specific to the more ambigous ones.
-	compilerVersionFunctions = []func(*elf.File) string{
-		GoVer,
-		OCamlVer,
-		GHCVer,
-		RustVerUnstripped,
-		RustVerStripped,
-		DVer,
-		GCCVer,
-		PasVer,
-		TCCVer,
-	}
+	// GHCVersionRegex is a regexp for matching Glasgow Haskell Compiler version strings
+	GHCVersionRegex = regexp.MustCompile(`GHC\ (\d{1,4}\.)(\d+\.)?(\d+)`)
+
+	// GoVersionRegex is a regexp for matching Go version strings
+	GoVersionRegex = regexp.MustCompile(`go(\d+\.)(\d+\.)?(\*|\d+)`)
+
+	// PasVersionRegex is a regexp for matching Free Pascal Compiler version strings
+	PasVersionRegex = regexp.MustCompile(`FPC\ (\d+\.)?(\d+\.)?(\*|\d+)`)
+
+	// OcamlVersionRegex is a regexp for matching OCaml version strings
+	OcamlVersionRegex = regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)`)
+
+	// GCCVersionRegex0 is another regexp for matching GCC version strings
+	GCCVersionRegex0 = regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)\ `)
+
+	// GCCVersionRegex1 is another regexp for matching GCC version strings
+	GCCVersionRegex1 = regexp.MustCompile(`\) (\d{1,4}\.)(\d+\.)?(\*|\d+)\ `)
+
+	// GCCVersionRegex2 is another regexp for matching GCC version strings
+	GCCVersionRegex2 = regexp.MustCompile(` (\d{1,4}\.)(\d+\.)?(\*|\d+)`)
+
+	// GCCVersionRegex3 is another regexp for matching GCC version strings
+	GCCVersionRegex3 = regexp.MustCompile(`(\d{1,4}\.)(\d+\.)?(\*|\d+)`)
+
+	// GCCVersionRegex4 is another regexp for matching GCC version strings
+	GCCVersionRegex4 = regexp.MustCompile(`\) (\d{1,4}\.)(\d+\.)?(\*|\d+).(\d+)`)
 )
 
-// versionSum takes a slice of strings that are the parts of a version number.
-// The parts are converted to numbers. If they can't be converted, they count
-// as less than nothing. The parts are then summed together, but with more
-// emphasis put on the earlier numbers. 2.0.0.0 has emphasis 2000.
-// The sum is then returned.
-func versionSum(parts []string) int {
-	sum := 0
-	length := len(parts)
-	for i := length - 1; i >= 0; i-- {
-		num, err := strconv.Atoi(parts[i])
-		if err != nil {
-			num = -1
-		}
-		sum += num * int(math.Pow(float64(10), float64(length-i-1)))
-	}
-	return sum
-}
-
-// FirstIsGreater checks if the first version number is greater than the second one.
-// It uses a relatively simple algorithm, where all non-numbers counts as less than "0".
-func FirstIsGreater(a, b string) bool {
-	aParts := strings.Split(a, ".")
-	bParts := strings.Split(b, ".")
-	// Expand the shortest version list with zeroes
-	for len(aParts) < len(bParts) {
-		aParts = append(aParts, "0")
-	}
-	for len(bParts) < len(aParts) {
-		bParts = append(bParts, "0")
-	}
-	// The two lists that are being compared should be of the same length
-	return versionSum(aParts) > versionSum(bParts)
+// compilerVersionFunctions is a slice of functions that can be used
+// for discovering a version string from an ELF file, ordered from
+// the more specific to the more ambigous ones.
+var compilerVersionFunctions = []func(*elf.File) string{
+	GoVer,
+	OCamlVer,
+	GHCVer,
+	RustVerUnstripped,
+	RustVerStripped,
+	DVer,
+	GCCVer,
+	PasVer,
+	TCCVer,
 }
 
 // GHCVer returns the GHC compiler version or an empty string
@@ -85,8 +77,7 @@ func GHCVer(f *elf.File) (ver string) {
 	}
 	if bytes.Contains(versionData, []byte(ghcMarker)) {
 		// Try the first regexp for picking out the version
-		versionCatcher1 := regexp.MustCompile(`GHC\ (\d{1,4}\.)(\d+\.)?(\d+)`)
-		ghcVersion := bytes.TrimSpace(versionCatcher1.Find(versionData))
+		ghcVersion := bytes.TrimSpace(GHCVersionRegex.Find(versionData))
 		if len(ghcVersion) > 0 {
 			return "GHC " + string(ghcVersion[4:])
 		}
@@ -110,8 +101,7 @@ func GCCVer(f *elf.File) (ver string) {
 	if bytes.Contains(versionData, []byte(gccMarker)) {
 		// Check if this is really clang
 		if bytes.Contains(versionData, []byte(clangMarker)) {
-			clangVersionCatcher := regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)\ `)
-			clangVersion := bytes.TrimSpace(clangVersionCatcher.Find(versionData))
+			clangVersion := bytes.TrimSpace(GCCVersionRegex0.Find(versionData))
 			return "Clang " + string(clangVersion)
 		}
 		// If the bytes are on this form: "GCC: (GNU) 6.3.0GCC: (GNU) 7.2.0",
@@ -134,8 +124,7 @@ func GCCVer(f *elf.File) (ver string) {
 			}
 		}
 		// Try the first regexp for picking out the version
-		versionCatcher1 := regexp.MustCompile(`\) (\d{1,4}\.)(\d+\.)?(\*|\d+)\ `)
-		gccVersion := bytes.TrimSpace(versionCatcher1.Find(versionData))
+		gccVersion := bytes.TrimSpace(GCCVersionRegex1.Find(versionData))
 		if len(gccVersion) > 0 {
 			if debug {
 				println("GCC #1 " + string(gccVersion[2:]))
@@ -143,8 +132,7 @@ func GCCVer(f *elf.File) (ver string) {
 			return "GCC " + string(gccVersion[2:])
 		}
 		// Try the second regexp for picking out the version
-		versionCatcher2 := regexp.MustCompile(` (\d{1,4}\.)(\d+\.)?(\*|\d+)`)
-		gccVersion = bytes.TrimSpace(versionCatcher2.Find(versionData))
+		gccVersion = bytes.TrimSpace(GCCVersionRegex2.Find(versionData))
 		if len(gccVersion) > 0 {
 			if debug {
 				println("GCC #2 " + string(gccVersion))
@@ -155,8 +143,7 @@ func GCCVer(f *elf.File) (ver string) {
 			}
 		}
 		// Try the third regexp for picking out the version
-		versionCatcher3 := regexp.MustCompile(`(\d{1,4}\.)(\d+\.)?(\*|\d+)`)
-		gccVersion = bytes.TrimSpace(versionCatcher3.Find(versionData))
+		gccVersion = bytes.TrimSpace(GCCVersionRegex3.Find(versionData))
 		if len(gccVersion) > 0 {
 			if debug {
 				println("GCC #3 " + string(gccVersion))
@@ -167,8 +154,7 @@ func GCCVer(f *elf.File) (ver string) {
 			}
 		}
 		// Try the fourth regexp for picking out the version
-		versionCatcher4 := regexp.MustCompile(`\) (\d{1,4}\.)(\d+\.)?(\*|\d+).(\d+)`)
-		gccVersion = bytes.TrimSpace(versionCatcher4.Find(versionData))
+		gccVersion = bytes.TrimSpace(GCCVersionRegex4.Find(versionData))
 		if len(gccVersion) > 0 {
 			if debug {
 				println("GCC #4 " + string(gccVersion))
@@ -201,22 +187,43 @@ func RustVerUnstripped(f *elf.File) (ver string) {
 	if sec == nil {
 		return
 	}
-	b, errData := sec.Data()
-	if errData != nil {
+	r := sec.Open()
+	bufferSize := 8192
+	margin := 1024
+	sr, err := NewStreamReader(r, bufferSize)
+	if err != nil {
 		return
 	}
-	pos1 := bytes.Index(b, []byte(rustMarker))
-	if pos1 == -1 {
-		return
+
+	for {
+		b, err := sr.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return
+		}
+
+		pos1 := bytes.Index(b, []byte(rustMarker))
+		if pos1 == -1 {
+			continue
+		}
+
+		if bufferSize-pos1 < margin {
+			continue
+		}
+
+		pos1 += len(rustMarker) + 1
+		pos2 := bytes.Index(b[pos1:], []byte("("))
+		if pos2 == -1 {
+			return
+		}
+		pos2 += pos1
+		versionString := strings.TrimSpace(string(b[pos1:pos2]))
+		return "Rust " + versionString
 	}
-	pos1 += len(rustMarker) + 1
-	pos2 := bytes.Index(b[pos1:], []byte("("))
-	if pos2 == -1 {
-		return
-	}
-	pos2 += pos1
-	versionString := strings.TrimSpace(string(b[pos1:pos2]))
-	return "Rust " + versionString
+
+	return
 }
 
 // RustVerStripped returns the Rust compiler version or an empty string,
@@ -233,24 +240,65 @@ func RustVerStripped(f *elf.File) (ver string) {
 	if sec == nil {
 		return
 	}
-	b, errData := sec.Data()
-	if errData != nil {
+	r := sec.Open()
+	bufferSize := 8192
+	sr, err := NewStreamReader(r, bufferSize)
+	if err != nil {
 		return
 	}
-	// Look for the rust marker that may appear in new, stripped executables
-	if !bytes.Contains(b, []byte("/rustc-")) {
-		// Look for the rust marker that may appear in old, stripped executables
-		rustIndex1 := bytes.Index(b, []byte("__rust_"))
-		if rustIndex1 <= 0 || b[rustIndex1-1] != 0 {
-			// No rust markers! Probably not created with the Rust compiler.
+
+	for {
+		b, err := sr.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
 			return
 		}
+
+		// Look for the rust marker that may appear in new, stripped executables
+		pos := bytes.Index(b, []byte("/rustc-"))
+		if pos == -1 {
+			continue
+		}
+
+		// Rust may use GCC for linking
+		if gccVersion := GCCVer(f); gccVersion != "" {
+			return "Rust (" + GCCVer(f) + ")"
+		}
+		return "Rust"
 	}
-	// Rust may use GCC for linking
-	if gccVersion := GCCVer(f); gccVersion != "" {
-		return "Rust (" + GCCVer(f) + ")"
+
+	_, err = r.Seek(0, io.SeekStart)
+	if err != nil {
+		return
 	}
-	return "Rust"
+	sr, err = NewStreamReader(r, bufferSize)
+	if err != nil {
+		return
+	}
+
+	for {
+		b, err := sr.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return
+		}
+		// Look for the rust marker that may appear in old, stripped executables
+		rustIndex1 := bytes.Index(b, []byte("__rust_"))
+		if rustIndex1 > 0 && b[rustIndex1-1] == 0 {
+			// Rust may use GCC for linking
+			if gccVersion := GCCVer(f); gccVersion != "" {
+				return "Rust (" + GCCVer(f) + ")"
+			}
+			return "Rust"
+		}
+	}
+
+	// No rust markers! Probably not created with the Rust compiler.
+	return
 }
 
 // DVer returns "DMD" if it is detected
@@ -261,14 +309,28 @@ func DVer(f *elf.File) (ver string) {
 	if sec == nil {
 		return
 	}
-	b, errData := sec.Data()
-	if errData != nil {
+	r := sec.Open()
+	bufferSize := 8192
+	sr, err := NewStreamReader(r, bufferSize)
+	if err != nil {
 		return
 	}
-	// Look for the DMD marker
-	if bytes.Contains(b, []byte("__dmd_")) {
-		return "DMD"
+
+	for {
+		b, err := sr.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return
+		}
+
+		// Look for the DMD marker
+		if bytes.Contains(b, []byte("__dmd_")) {
+			return "DMD"
+		}
 	}
+
 	return
 }
 
@@ -279,23 +341,46 @@ func GoVer(f *elf.File) (ver string) {
 	if sec == nil {
 		return
 	}
-	b, errData := sec.Data()
-	if errData != nil {
+	r := sec.Open()
+	bufferSize := 8192
+	margin := 1024
+	sr, err := NewStreamReader(r, bufferSize)
+	if err != nil {
 		return
 	}
-	versionCatcher := regexp.MustCompile(`go(\d+\.)(\d+\.)?(\*|\d+)`)
-	goVersion := string(versionCatcher.Find(b))
-	if strings.HasPrefix(goVersion, "go") {
-		return "Go " + goVersion[2:]
-	}
-	if goVersion == "" {
-		gosec := f.Section(".gosymtab")
-		if gosec != nil {
-			return "Go (unknown version)"
+
+	for {
+		b, err := sr.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return
 		}
-		return
+
+		goVersionIndex := GoVersionRegex.FindIndex(b)
+		if goVersionIndex == nil {
+			continue
+		}
+		if bufferSize-goVersionIndex[0] < margin {
+			continue
+		}
+
+		goVersion := string(GoVersionRegex.Find(b))
+		if strings.HasPrefix(goVersion, "go") {
+			return "Go " + goVersion[2:]
+		}
+		if goVersion == "" {
+			gosec := f.Section(".gosymtab")
+			if gosec != nil {
+				return "Go (unknown version)"
+			}
+			return
+		}
+		return goVersion
 	}
-	return goVersion
+
+	return
 }
 
 // PasVer returns the FPC compiler version or an empty string
@@ -305,13 +390,36 @@ func PasVer(f *elf.File) (ver string) {
 	if sec == nil {
 		return
 	}
-	b, errData := sec.Data()
-	if errData != nil {
+
+	r := sec.Open()
+	bufferSize := 8192
+	sr, err := NewStreamReader(r, bufferSize)
+	if err != nil {
 		return
 	}
-	versionCatcher := regexp.MustCompile(`FPC\ (\d+\.)?(\d+\.)?(\*|\d+)`)
-	return string(versionCatcher.Find(b))
 
+	for {
+		b, err := sr.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return
+		}
+
+		indexes := PasVersionRegex.FindIndex(b)
+		if indexes == nil {
+			continue
+		}
+
+		if indexes[0] == bufferSize-(indexes[1]-indexes[0]) {
+			continue
+		}
+
+		return string(PasVersionRegex.Find(b))
+	}
+
+	return
 }
 
 // TCCVer returns "TCC" or an empty string
@@ -336,20 +444,40 @@ func OCamlVer(f *elf.File) (ver string) {
 	if sec == nil {
 		return
 	}
-	b, errData := sec.Data()
-	if errData != nil {
+	r := sec.Open()
+	bufferSize := 8192
+	margin := 1024
+	sr, err := NewStreamReader(r, bufferSize)
+	if err != nil {
 		return
 	}
-	if !bytes.Contains(b, []byte(ocamlMarker)) {
-		// Probably not OCaml
-		return
+
+	for {
+		b, err := sr.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return
+		}
+
+		pos := bytes.Index(b, []byte(ocamlMarker))
+		if pos == -1 {
+			continue
+		}
+
+		if bufferSize-pos < margin {
+			continue
+		}
+
+		ocamlVersion := "OCaml " + string(OcamlVersionRegex.Find(b))
+		if ocamlVersion == "" {
+			return "OCaml (unknown version)"
+		}
+		return ocamlVersion
 	}
-	versionCatcher := regexp.MustCompile(`(\d+\.)(\d+\.)?(\*|\d+)`)
-	ocamlVersion := "OCaml " + string(versionCatcher.Find(b))
-	if ocamlVersion == "" {
-		return "OCaml (unknown version)"
-	}
-	return ocamlVersion
+
+	return
 }
 
 // Compiler takes an *elf.File and tries to find which compiler and version
@@ -367,8 +495,7 @@ func Compiler(f *elf.File) string {
 
 // Stripped returns true if symbols can not be retrieved from the given ELF file
 func Stripped(f *elf.File) bool {
-	_, err := f.Symbols()
-	return err != nil
+	return f.SectionByType(elf.SHT_SYMTAB) == nil
 }
 
 // Examine tries to discover which compiler and compiler version the given

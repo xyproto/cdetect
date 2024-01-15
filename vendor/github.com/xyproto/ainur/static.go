@@ -3,10 +3,9 @@ package ainur
 import (
 	"debug/elf"
 	"errors"
-	"strings"
 )
 
-// Static checks that PT_DYNAMIC is not in one of the prog headers of the ELF file
+// Static checks that PT_DYNAMIC is not in one of the program headers of the ELF file
 func Static(f *elf.File) bool {
 	for _, prog := range f.Progs {
 		progType := prog.ProgHeader.Type
@@ -17,17 +16,19 @@ func Static(f *elf.File) bool {
 	return true
 }
 
-// ExamineStatic examines a given filename and returns true if is statically linked
-// (does not have PT_DYNAMIC in one of the prog headers)
+// ExamineStatic opens the given filename and checks that it is an ELF file.
+// It then calls Static to confirm that PT_DYNAMIC is not present in the program headers.
 func ExamineStatic(filename string) (bool, error) {
 	f, err := elf.Open(filename)
 	if err != nil {
-		if strings.HasPrefix(err.Error(), "bad magic") {
+		if _, isFormatError := err.(*elf.FormatError); isFormatError {
 			return false, errors.New(filename + ": Not an ELF")
 		}
 		return false, err
 	}
 	defer f.Close()
+
+	// This is where the actual
 	return Static(f), nil
 }
 
